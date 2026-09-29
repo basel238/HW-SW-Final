@@ -1,0 +1,16 @@
+flowchart TB
+  PY[Optimized Python: sphere_shadow / flat_pow] --> NATIVE[Proposed native adapter and CPU control]
+  NATIVE --> BRIDGE[Processor bridge: implementation pending]
+  BRIDGE -->|operand writes: 64 bits + 3-bit address| REGS[8 x 64-bit operand registers]
+  BRIDGE -->|8-bit opcode + valid/ready| FSM[GEOM FSM: IDLE / ISSUE / WAIT / RESP]
+  REGS --> MUX[Operand muxes]
+  TMP[10 x 64-bit temporary registers] --> MUX
+  FSM --> MUX
+  MUX --> ADD[HardFloat add/sub]
+  MUX --> MUL[HardFloat multiplier]
+  MUX --> ITER[HardFloat iterative div/sqrt]
+  ADD --> OUT[Result mux + finite/status check]
+  MUL --> OUT
+  ITER -->|completion handshake| OUT
+  OUT --> TMP
+  OUT -->|64-bit result + 4-bit status; held valid/ready| BRIDGE

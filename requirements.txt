@@ -1,0 +1,3 @@
+# Official harness cross-check and statistics tooling. Runtime kernels use stdlib.
+pyperformance==1.14.0
+pyperf==2.10.0

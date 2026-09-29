@@ -1,0 +1,17 @@
+[
+  {
+    "file": "geom-accelerator-transaction-datapath-flow.html",
+    "original_sha256": "4955b1f0cc34e892c8bcecaedbfb7ee6a3cf23585341bc96c715993f7b3a444b",
+    "change": "Added prominent conceptual/non-cycle-accurate status note; corrected default/backend labels"
+  },
+  {
+    "file": "geom-accelerator-hierarchical-block-diagram.html",
+    "original_sha256": "fa8512ecfebdb10f9740fb4459b2df026cb998784b2549a3a4b8f1903c38d2fc",
+    "change": "Added prominent conceptual/non-cycle-accurate status note; corrected default/backend labels"
+  },
+  {
+    "file": "full-run-streamed-through-the-datapath.html",
+    "original_sha256": "38ff6cb6d675733826662a4657418e3839e110ec8bb92c7ac2c2cf50e83b7b1e",
+    "change": "Added prominent conceptual/non-cycle-accurate status note; corrected default/backend labels"
+  }
+]

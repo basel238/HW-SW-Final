@@ -1,0 +1,7 @@
+Official Brendan Gregg FlameGraph toolkit (required subset)
+Repository: https://github.com/brendangregg/FlameGraph
+Revision: 41fee1f99f9276008b7cd112fca19dc3ea84ac32
+Files downloaded verbatim via raw.githubusercontent.com at this revision.
+License: docs/cddl1.txt; original copyright/license headers are intact.
+This pins reproduction tools for the submission. Historical results do not
+record a FlameGraph revision, so no identical historical tool version is claimed.

@@ -1,0 +1,8 @@
+{
+  "backend": "cpu-native",
+  "sphere_batch_cases": 2000,
+  "approximate_nbody_steps": 100,
+  "state_bits_vs_sqrt_model": "PASS",
+  "rtl_executed": false,
+  "whole_upstream_benchmark_validated": false
+}

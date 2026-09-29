@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="650" viewBox="0 0 1100 650">
+<style>text{font-family:Arial,sans-serif;fill:#172b4d;font-size:18px}.title{font-size:25px;font-weight:bold}.small{font-size:15px}.box{fill:#edf4ff;stroke:#4169a8;stroke-width:2}.hw{fill:#e4f4ea;stroke:#397452;stroke-width:2}.pending{fill:#fff4da;stroke:#ad7728;stroke-width:2;stroke-dasharray:7 4}.arrow{fill:none;stroke:#45556c;stroke-width:2;marker-end:url(#a)}</style>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#45556c"/></marker></defs>
+<text x="35" y="40" class="title">GEOM: ordered binary64 command datapath</text>
+<rect x="35" y="65" width="320" height="76" rx="10" class="box"/><text x="53" y="94">Optimized benchmark</text><text x="53" y="121" class="small">raytrace sphere_shadow / nbody flat_pow</text>
+<path d="M355,102 L410,102" class="arrow"/><rect x="415" y="65" width="640" height="76" rx="10" class="pending"/><text x="435" y="94">Proposed native adapter → CPU/device bridge</text><text x="435" y="121" class="small">CPU control included; deployed bridge and full benchmark offload pending</text>
+<path d="M590,141 L590,195" class="arrow"/><text x="610" y="171" class="small">64-bit operands; 8-bit command; valid/ready</text>
+<rect x="35" y="197" width="1020" height="365" rx="12" fill="#fbfdfc" stroke="#397452" stroke-width="2"/>
+<text x="55" y="228" class="small">Implemented logical RTL · one outstanding command · 50 MHz target, unverified timing</text>
+<rect x="65" y="250" width="245" height="72" rx="8" class="hw"/><text x="82" y="280">Operand registers</text><text x="82" y="304" class="small">8 × 64 bits; idle writes only</text>
+<rect x="378" y="250" width="260" height="72" rx="8" class="hw"/><text x="396" y="280">Micro-operation FSM</text><text x="396" y="304" class="small">IDLE → ISSUE → WAIT → RESP</text>
+<rect x="745" y="250" width="265" height="72" rx="8" class="hw"/><text x="765" y="280">Temporary registers</text><text x="765" y="304" class="small">10 × 64 bits; rounded results</text>
+<path d="M190,322 L190,345 L510,345 L510,375" class="arrow"/><path d="M875,322 L875,345 L530,345" class="arrow"/><path d="M510,322 L510,345" class="arrow"/>
+<rect x="65" y="383" width="245" height="70" rx="8" class="hw"/><text x="83" y="413">HardFloat add/sub</text><text x="83" y="438" class="small">RNE; gradual underflow</text>
+<rect x="378" y="383" width="260" height="70" rx="8" class="hw"/><text x="396" y="413">HardFloat multiplier</text><text x="396" y="438" class="small">Separate rounding; no FMA</text>
+<rect x="745" y="383" width="265" height="70" rx="8" class="hw"/><text x="765" y="413">HardFloat div/sqrt</text><text x="765" y="438" class="small">Variable completion handshake</text>
+<path d="M190,345 L190,375" class="arrow"/><path d="M875,345 L875,375" class="arrow"/>
+<path d="M190,453 L190,477 L510,477" class="arrow"/><path d="M875,453 L875,477 L540,477" class="arrow"/><path d="M510,453 L510,485" class="arrow"/>
+<rect x="270" y="490" width="490" height="51" rx="8" class="hw"/><text x="290" y="522">Result mux, exceptional check, held response</text>
+<path d="M760,515 L1030,515 L1030,300 L1015,300" class="arrow"/>
+<path d="M515,541 L515,595" class="arrow"/><text x="245" y="624">64-bit result + 4-bit status → host traversal / software fallback</text>
+</svg>

@@ -1,0 +1,12 @@
+hardware/vendor/HardFloat-1/source/divSqrtRecFN_small.v:298:16: warning: redefinition of 'sqrtOpOut' [-Wredefinition]
+        output sqrtOpOut,
+               ^
+hardware/vendor/HardFloat-1/source/divSqrtRecFN_small.v:305:10: note: previous definition here
+    wire sqrtOpOut;
+         ^
+RTL syntax/elaboration: PASS (not behavioral verification or synthesis)
+Top level design units:
+    geom_accel
+
+
+Build succeeded: 0 errors, 1 warning

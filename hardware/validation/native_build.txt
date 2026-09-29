@@ -1,0 +1,2 @@
+CPU control compiler flags: -O3 -march=native -fno-math-errno -ffp-contract=off -fno-fast-math
+exit=0

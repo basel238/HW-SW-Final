@@ -1,0 +1,51 @@
+{
+  "basis": "User-supplied reports and hardware material; claims reconciled with retained evidence and code.",
+  "files": [
+    {
+      "filename": "report_raytrace.txt",
+      "bytes": 23381,
+      "sha256": "e96353f2f02b6b24676736a7b1dd4d75115f4eaebdfcf2754a735f145cd6ce27"
+    },
+    {
+      "filename": "report_nbody.txt",
+      "bytes": 22503,
+      "sha256": "63b321fd4eae0d51a5ce5d83c35ea32f76ce3d890f021fecfa30e958c5ed46ee"
+    },
+    {
+      "filename": "nbody \u2014 updated hardware sections.md",
+      "bytes": 6943,
+      "sha256": "686b3e8bf43a304a922476c5aa3ece5128232d1350f7dfdd0287ddb8ae02e1ac"
+    },
+    {
+      "filename": "raytrace \u2014 updated hardware sections.md",
+      "bytes": 7279,
+      "sha256": "811d46210dabe9bc5605d302b00c2b781866641a831048c203baba761fd22ea8"
+    },
+    {
+      "filename": "Hardware Improvement.zip",
+      "bytes": 76345,
+      "sha256": "0a19bf81b336ea4a48198f2538f48fba757b59a045cb7d540ac7981f1468627b"
+    },
+    {
+      "filename": "geom-accelerator-transaction-datapath-flow.html",
+      "bytes": 298287,
+      "sha256": "4955b1f0cc34e892c8bcecaedbfb7ee6a3cf23585341bc96c715993f7b3a444b"
+    },
+    {
+      "filename": "geom-accelerator-hierarchical-block-diagram.html",
+      "bytes": 294271,
+      "sha256": "fa8512ecfebdb10f9740fb4459b2df026cb998784b2549a3a4b8f1903c38d2fc"
+    },
+    {
+      "filename": "full-run-streamed-through-the-datapath.html",
+      "bytes": 309788,
+      "sha256": "38ff6cb6d675733826662a4657418e3839e110ec8bb92c7ac2c2cf50e83b7b1e"
+    }
+  ],
+  "requirements_source": {
+    "filename": "Project.pdf",
+    "bytes": 388869,
+    "sha256": "899af7f5fcd1aec5aa87c29a209a912c1760309c94118292d81256f50475b7cc",
+    "note": "Course instructions; required submission mapping is in docs/SUBMISSION_CHECKLIST.md."
+  }
+}

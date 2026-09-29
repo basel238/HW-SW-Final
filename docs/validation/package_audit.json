@@ -1,0 +1,78 @@
+{
+  "status": "pass",
+  "errors": [],
+  "files_at_audit": 302,
+  "bytes_at_audit": 99907702,
+  "largest_file_bytes": 9932672,
+  "relative_latest_links": [
+    {
+      "path": "results/latest_nbody_optimized",
+      "target": "nbody_optimized_20260920-081744_16940"
+    },
+    {
+      "path": "results/latest_comparison_nbody",
+      "target": "session_all_20260920-074308_674/comparison_nbody"
+    },
+    {
+      "path": "results/latest_raytrace_baseline",
+      "target": "raytrace_baseline_20260929-193534_678"
+    },
+    {
+      "path": "results/latest_nbody_baseline",
+      "target": "nbody_baseline_20260920-080806_16940"
+    },
+    {
+      "path": "results/latest_comparison_raytrace",
+      "target": "session_raytrace_20260929-193534_678/comparison_raytrace"
+    },
+    {
+      "path": "results/latest_raytrace_optimized",
+      "target": "raytrace_optimized_20260929-195030_678"
+    }
+  ],
+  "pdfs": [
+    {
+      "file": "docs/reports/report_raytrace.pdf",
+      "pages": 12,
+      "text_characters": 23489,
+      "hardware_links": [
+        "../../hardware/diagrams/geom-accelerator-hierarchical-block-diagram.html",
+        "../../hardware/diagrams/geom-accelerator-transaction-datapath-flow.html",
+        "../../hardware/diagrams/full-run-streamed-through-the-datapath.html"
+      ]
+    },
+    {
+      "file": "docs/reports/report_nbody.pdf",
+      "pages": 12,
+      "text_characters": 21312,
+      "hardware_links": [
+        "../../hardware/diagrams/geom-accelerator-hierarchical-block-diagram.html",
+        "../../hardware/diagrams/geom-accelerator-transaction-datapath-flow.html",
+        "../../hardware/diagrams/full-run-streamed-through-the-datapath.html"
+      ]
+    }
+  ],
+  "html": [
+    {
+      "file": "full-run-streamed-through-the-datapath.html",
+      "checked_scripts": 3,
+      "external_scripts": [],
+      "browser_execution_tested": false
+    },
+    {
+      "file": "geom-accelerator-hierarchical-block-diagram.html",
+      "checked_scripts": 2,
+      "external_scripts": [],
+      "browser_execution_tested": false
+    },
+    {
+      "file": "geom-accelerator-transaction-datapath-flow.html",
+      "checked_scripts": 3,
+      "external_scripts": [],
+      "browser_execution_tested": false
+    }
+  ],
+  "visual_review": "All 24 PDF pages rendered; contact sheets plus dense timing/flame/interface pages inspected. No clipping or missing glyphs found.",
+  "no_git_commands_executed": true,
+  "raw_evidence_checks": "Separate report_evidence_audit.md records hash verification."
+}

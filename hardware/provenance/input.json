@@ -1,0 +1,12 @@
+{
+  "archive": "Hardware Improvement.zip",
+  "sha256": "0a19bf81b336ea4a48198f2538f48fba757b59a045cb7d540ac7981f1468627b",
+  "adapted_from": "geom_accel/ in supplied archive",
+  "changes": [
+    "Replace behavioral real arithmetic with vendored HardFloat logic and completion handshake",
+    "Reject invalid operations and exceptional intermediates; gate busy writes",
+    "Disable contraction in native C controls; label backend cpu-native",
+    "Replace unsupported ROI estimates, diagrams captions and profiling workflow",
+    "RMAG explicitly optional approximate, not final nbody kernel"
+  ]
+}

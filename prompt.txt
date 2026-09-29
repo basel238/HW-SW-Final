@@ -1,0 +1,456 @@
+===============================================================================
+AI-ASSISTED DEVELOPMENT AND REVIEW — PROMPT / DECISION RECORD
+HW/SW Co-design project: raytrace and nbody
+===============================================================================
+
+Purpose and scope
+-----------------
+This is a curated record of actual user prompts, the decisions they prompted,
+and the evidence retained in this submission. It documents iterative analysis,
+implementation, testing and correction. It is not a complete conversation
+export, a record of private reasoning, a timesheet or a claim about hours spent.
+
+Quoted excerpts below preserve the user's wording and spelling. Only line
+breaks and surrounding whitespace are normalized; an excerpt may contain only
+part of a longer prompt. Explanatory decisions/outcomes are summaries, not
+additional quotations. Dates appear only where supported by the preserved log.
+
+AI assistance included OpenAI Codex for source review, software changes,
+correctness tests, measurement analysis, hardware adaptation, packaging and
+report drafting. The earlier preserved log attributes initial scaffolding to
+Claude (Anthropic); that is historical attribution from the supplied record,
+not a newly verified reconstruction of that conversation.
+
+The full earlier project prompt log is retained at:
+  docs/provenance/prior_prompt_log.txt
+
+IMPORTANT HISTORICAL QUALIFICATION: that earlier file contains superseded
+kernel defaults, older measurements, inaccurate performance explanations and
+an earlier claim that the hardware proposal was entirely the student's own
+work. Those statements are preserved as history, not endorsed as current facts.
+The final hardware and reports were AI-assisted. Current source, selected
+measurement artifacts and final validation records govern this submission.
+The student remains responsible for understanding and defending the work.
+
+-------------------------------------------------------------------------------
+01. Establish the project scope and measurement infrastructure
+-------------------------------------------------------------------------------
+Prompt recorded in the earlier supplied log:
+"Go thoroughly into the requirements of this project, and give me a solution to
+ the first 3 stages (the run scripts and wrappers). I want commands and scripts
+ to run and get the perf and flamegraph and all the results needed for analysis
+ for these benchmarks."
+
+Decision/outcome: build repeatable benchmark wrappers and separate correctness,
+clean timing, counting and profiling phases. Read Project.pdf as the submission
+specification, rather than treating an assistant's initial plan as the rubric.
+
+Evidence: lib/pipeline.sh; lib/common.sh; script_raytrace.sh; script_nbody.sh;
+run_all.sh. Earlier scaffolding history is in the preserved log.
+
+-------------------------------------------------------------------------------
+02. Review the entire solution, not just the runtime number
+-------------------------------------------------------------------------------
+User prompt:
+"review everything, from the tools being used, to the code, to the compliance
+ with the course material, to the results, to the optimizations, lets go on and
+ discuss everything"
+
+Decision/outcome: examine benchmark identity, execution boundaries, arithmetic
+semantics, profiler output and course requirements together. Separate source
+correctness, measurement validity and performance improvement; success in one
+category does not establish the others.
+
+Evidence: upstream/; bench/; tests/; report_raytrace.txt; report_nbody.txt.
+
+-------------------------------------------------------------------------------
+03. Verify that the starting point is the supplied pyperformance benchmark
+-------------------------------------------------------------------------------
+User prompt:
+"are the original becnhmarks (the "upstream") identical to those supplied by
+ pyperformance? because we are meant to start from those as our reference and
+ optimize"
+
+Follow-up:
+"what do you mean not official pypreformance run?
+ what is the official then? is my run bad? am I doing things wrong?"
+
+Decision/outcome: distinguish upstream source identity from execution through
+pyperformance's official harness. Preserve reference sources and use wrappers
+for controlled baseline/variant comparisons. A wrapper run is not renamed an
+official pyperformance run. Official harness results, when present, are a
+separate cross-check rather than a substitute for paired optimized timings.
+
+Evidence: upstream/; bench/; lib/pipeline.sh; selected run manifests and
+pyperformance artifacts under results/.
+
+-------------------------------------------------------------------------------
+04. Establish the baseline before judging an optimization
+-------------------------------------------------------------------------------
+User prompt:
+"i don't care about optimized
+ as you said, we still don't have optimized implementation
+ lets see the normal runs and try to identify issues"
+
+Decision/outcome: avoid attributing a speedup to passthrough kernels. Start
+with the unmodified workload and inspect native stacks, Python call counts,
+perf counters and uninstrumented timing. Keep artifacts associated with their
+actual kernel and timestamp.
+
+Evidence: baseline artifacts in results/; analysis/latest_results_analysis.json;
+final reports' initial-analysis sections. Earlier passthrough runs are historical
+context and are not retained as current performance evidence.
+
+-------------------------------------------------------------------------------
+05. Challenge how bottlenecks and limits were inferred
+-------------------------------------------------------------------------------
+User prompt:
+"Can you help me firts better undertsand from the results how do we conclude
+ the bottlenecks you talked about?
+ how did you infer these limits on the benchmarks from seeing this data and
+ flamegraphs?"
+
+Decision/outcome: connect hot source operations to Python calls and native
+symbols, while correcting overconfident interpretations. A debug interpreter
+self-sample share is not a precise removable fraction of release runtime;
+whole-program instructions divided by calls do not measure a fixed call cost;
+static bytecode counts are not percentages of executed time. Amdahl estimates
+must use a defensible scope and must include the replacement's cost.
+
+Evidence: report_raytrace.txt; report_nbody.txt; selected folded stacks,
+perf dumps, counters and cProfile outputs; preserved correction history.
+
+-------------------------------------------------------------------------------
+06. Implement the first raytrace change under a correctness contract
+-------------------------------------------------------------------------------
+User prompt:
+"lets start with that, apply the changes to the code under
+ /Users/baselsalameh/Desktop/M.Sc. Technion/Semester 6/HW:SW Co-Design/HW-SW-V2
+ (under the variants / optimized )
+ and in parallel, lets start preparing the documents for the analysis that is
+ required by the project"
+
+Decision/outcome: implement shadow-ray reuse in the optimized variant and retain
+the upstream reference. Construct the same light-visibility ray once for an
+object loop instead of repeatedly constructing equivalent rays. Compare output
+bytes, preserve visibility semantics and restore monkey-patched methods after
+candidate execution so later reference checks remain independent.
+
+Evidence: variants/bm_raytrace_upstream_opt.py;
+tests/test_raytrace_shadow.py; docs/validation/runtime_raytrace_exact.log.
+
+-------------------------------------------------------------------------------
+07. Keep exactness and API assumptions explicit
+-------------------------------------------------------------------------------
+User prompt:
+"1. agree, 100% correctness, flat_sqrt as nice to have (maybe mention in report)"
+
+Decision/outcome: use exact image/state comparisons for selected software.
+A guard that returns its receiver for one class can still enforce type semantics
+through polymorphic dispatch; deleting it is not automatically a no-op change.
+Exact-class assumptions and fallback behavior require review. Do not silently
+accept approximate arithmetic because the energy difference looks small.
+
+Evidence: tests/test_raytrace_full.py; tests/test_raytrace_shadow.py;
+tests/test_nbody_flat.py; retained full-batch correctness logs. Approximate
+candidates remain explicitly optional and are not the selected kernels.
+
+-------------------------------------------------------------------------------
+08. Investigate nbody state reuse across consecutive pairs
+-------------------------------------------------------------------------------
+User prompt, preserved in the 20 September implementation log:
+"now lets move on to optimizing the nbody benchmark
+ you said something about reusing state across consecutive pairs
+ how should we be doing that"
+
+Follow-up:
+"also lets rethink what the bottlenecks are and how do we eliminate them by
+ doing this"
+
+Decision/outcome: add grouped updates to retain the first body's scalar state
+across consecutive partners. Preserve pair order, the original power expression
+and the position-update phase. Reducing repeated Python list accesses is the
+mechanism; source-level access counts are not a proportional runtime promise.
+
+Evidence: variants/bm_nbody_upstream_opt.py; tests/test_nbody_grouped.py.
+The grouped candidate remains selectable as an intermediate experiment.
+
+-------------------------------------------------------------------------------
+09. Keep every optimization separate from the upstream reference
+-------------------------------------------------------------------------------
+User prompt:
+"this should be implemented in optimized, don't touch the upstream version.
+ we want to optimize upstream"
+
+Decision/outcome: retain reference implementations and place candidate kernels
+in variants/. Ensure verification invokes the actual reference rather than a
+rewritten approximation. For nbody, compare all 30 position/velocity components
+as well as energy, including the accumulating multi-loop workload.
+
+Evidence: upstream/; variants/; tests/test_nbody_flat.py;
+docs/validation/runtime_nbody_exact.log.
+
+-------------------------------------------------------------------------------
+10. Revisit an insufficient nbody improvement
+-------------------------------------------------------------------------------
+User prompt:
+"We need to think of a different approach / more changes we want to apply to
+ the nbody benchmark as it didn’t reach required optimization goal
+ I think we still haven't identified the real bottleneck in this benchmark
+ so lets try again and review the results"
+
+Related questions:
+"can maybe an algorithm change approach be useful here?"
+"mayeb new data structures? or are we using libraries that can eb swapped for
+ better ones?"
+"remember we have 20000 steps
+ so maybe small changes can also make a difference over a lot of work"
+
+Decision/outcome: examine work repeated across all timesteps. For the fixed
+five-body workload, retain the required interaction order and numerical method;
+focus on repeated interpreter, loop and indexing work rather than assuming a
+new asymptotic algorithm or external library is automatically appropriate.
+
+Evidence: final nbody report's optimization rationale and considered options;
+variants/bm_nbody_upstream_opt.py; tests/test_nbody_controls.py.
+
+-------------------------------------------------------------------------------
+11. Add flat scalar state and unroll the fixed pair structure
+-------------------------------------------------------------------------------
+User prompt:
+"implement all of the improvements together
+ keep the grouped, add flat_pow, and do more of what you said about locality
+ and making less array accesses, and whatever other ideas from the review
+ I gaveyou looked good"
+
+Follow-ups:
+"what about `flat_unrolled`"
+"does flat_sqrt include the flat_pow?"
+
+Decision/outcome: retain grouped and add flat_pow / flat_sqrt. The flat kernels
+keep the five bodies' scalar state in locals and unroll ten ordered pairs;
+flat_pow preserves the reference arithmetic and is selected. flat_sqrt applies
+the additional approximate magnitude reformulation. The word "flat" describes
+data access and loop structure, not a new gravitational algorithm.
+
+Evidence: variants/bm_nbody_upstream_opt.py; tests/test_nbody_flat.py.
+Local candidate timings motivated target-VM experiments; they were not quoted
+as target-VM results.
+
+-------------------------------------------------------------------------------
+12. Make the workflow run the intended kernels and preserve evidence
+-------------------------------------------------------------------------------
+User prompt:
+"I also want the script for run_all to run the baseline and the full optimized
+ versions, full workflow"
+
+Related user report:
+"the raytrae results on ubuntu ran with the passthrough version of teh
+ optimized kernel
+ I didn't perform pull on the vm for teh raytrace shadow"
+
+Decision/outcome: verify kernel selection, source identity, manifests and full
+batch correctness before interpreting performance. A successful script launch
+is not evidence that the VM had the intended source. Add routing tests and
+retain separate clean timing and profiling processes. The later two-change
+raytrace request superseded this earlier full-default request.
+
+Evidence: run_all.sh; lib/pipeline.sh; tests/test_run_all_pipeline.py;
+tests/test_raytrace_pipeline.py; tests/test_nbody_pipeline.py; run manifests.
+
+-------------------------------------------------------------------------------
+13. Interpret the full-kernel measurements and similar flame graphs
+-------------------------------------------------------------------------------
+User prompt:
+"inspect the results of the newest run, they landed under same directory
+ lets infer everything we need from it and understand if further improvements
+ occurred, which improvements to keep
+ update the reports if we decide on keeping the additional improvements for
+ raytrace
+ and think if this changes anything about the suggested hardware optimization"
+
+Earlier question:
+"also explain why the flame graphs still look quite similar"
+
+Decision/outcome: record the historical full raytrace result (42.78% median
+runtime reduction) and the retained nbody flat_pow result (36.89%). Similar
+interpreter stack structure is compatible with fewer executed operations;
+normalized flame widths alone do not establish equal absolute work. Compare
+matched runtimes, counts and sample definitions before explaining width changes.
+
+Evidence: current analysis preserves the historical full comparison numerically;
+latest raw evidence is under results/. The old full result is not relabelled as
+a measurement of the newly selected sphere_shadow kernel.
+
+-------------------------------------------------------------------------------
+14. Reconsider the hardware target and the course requirements
+-------------------------------------------------------------------------------
+User prompts:
+"regarding the hw optimizations
+ are we supposed to optimize only for 1 benchmark? or do we need to suggest 2
+ improvements each for a benchmark? or should 1 work for both benchmarks?
+ and why did we choose what we chose?
+ how sure about it are we"
+
+"so this is not a good fit
+ lets go in the direction of eliminating something that is not arithmetic
+ what other bottle necks did we have for these benchmarks?"
+
+Decision/outcome: reread the assignment and analyze the remaining work after
+software optimization. Do not force a shared unit to claim gains for both
+benchmarks. Explain separately interpreter removal by native software, hardware
+arithmetic, communication, correctness and the required logical datapath/control.
+
+Evidence: final report hardware sections; hardware/docs/HARDWARE_DESIGN.md.
+
+-------------------------------------------------------------------------------
+15. Independently review the supplied hardware-improvement proposal
+-------------------------------------------------------------------------------
+User prompt accompanying Hardware Improvement.zip:
+"what do you think of this"
+
+Decision/outcome: inspect source and test numerical claims instead of importing
+its conclusions. The supplied C backend executed ordinary CPU arithmetic;
+it was not a hardware driver. Contraction could change ray results. The supplied
+RMAG path used approximate sqrt arithmetic, and its assumed speedup did not
+follow from the stated operation schedule. These findings informed the corrected
+final adaptation, rather than being presented as successful hardware results.
+
+Evidence: hardware/provenance/input.json records archive identity and changes;
+hardware/software/c_ext/ uses explicit contraction/fast-math restrictions.
+The source archive's original 59% / 85% hardware speedup claims are not adopted.
+
+-------------------------------------------------------------------------------
+16. Narrow the raytrace default to two requested transformations
+-------------------------------------------------------------------------------
+User prompt, recorded 29 September 2026:
+"I want to run raytrace with only sphere scalar and ray shadow improvements.
+ I want to make this the default. can you update the code / run scripts"
+
+Decision/outcome: select sphere_shadow: scalar sphere intersections plus
+shadow-ray reuse, with the appropriate generic fallbacks. Route the Python CLI,
+raytrace script, run_all and A/B workflow consistently. Keep full available as
+an explicit alternative; do not silently retain its additional transformations
+in the new default.
+
+Evidence: variants/bm_raytrace_upstream_opt.py; script_raytrace.sh; run_all.sh;
+tools/ab_timing.sh; routing and scope tests in tests/.
+
+-------------------------------------------------------------------------------
+17. Compare the new two-change run against the historical full run
+-------------------------------------------------------------------------------
+Current user prompt:
+"check out the new results under
+ /Users/baselsalameh/Desktop/M.Sc. Technion/Semester 6/HW:SW Co-Design/HW-SW-V2.
+ Do we get better results compared to full? how do we compare?"
+
+Decision/outcome: the new sphere_shadow median is 530.8805 ms/frame versus its
+795.61825 ms baseline: a 33.27% reduction. Historical full was 452.69625 ms/frame,
+a 42.78% reduction against its own matched baseline. The two-change median is
+17.27% longer than historical full. This is a comparison across sessions, not
+a new interleaved head-to-head measurement. Retain the user's requested simpler
+default while reporting that it is not the faster observed configuration.
+Nbody's selected flat_pow result remains 143.3736875 ms/unit, 36.89% lower than
+its matched baseline.
+
+Evidence: analysis/latest_results_analysis.json; analysis/latest_results_notes.md;
+analysis/recompute_results.py; selected baseline/optimized raw artifacts.
+
+-------------------------------------------------------------------------------
+18. Build a clean submission around actual required deliverables
+-------------------------------------------------------------------------------
+Current user prompt:
+"I want you to take another look at the submission requirements. and help me
+ create a new folder with the clean submission files in the correct format each.
+ in addition to what is required, also keep the results, the flame graphs, the
+ analysis and data files that we get as results. but only keep the latest results."
+
+Additional instruction:
+"make sure all the scripts and wrappers and all needed files are included."
+
+Decision/outcome: create a separate clean submission without changing the source
+repository or performing Git operations. Keep the latest selected valid evidence
+per benchmark and document the selection. Include required text reports, readable
+PDF reports, scripts, wrappers, upstream sources, optimized kernels, dependencies,
+tests, raw/derived results, flame graphs and reproducible analysis. Preserve input
+provenance; remove duplicate and stale raw-result clutter from the submission.
+
+Evidence: README.md; analysis/latest_results_selection_inventory.json;
+docs/provenance/source_inputs.json; tests/test_submission_integrity.py.
+Push instructions are supplied for the user to execute; no push is represented
+as having occurred during preparation.
+
+-------------------------------------------------------------------------------
+19. Adapt the supplied hardware and diagrams without inventing a gain
+-------------------------------------------------------------------------------
+Current user prompts:
+"Also use the hardware improvement that is also included here in the zip file"
+"I also have some html files that show animations and diagrams for the hardware
+ improvement that you can attach as well in the hardware section"
+
+Decision/outcome: retain the GEOM command concept, replace behavioral real
+arithmetic with vendored HardFloat logic and completion handshakes, repair
+invalid-operation and exceptional-result handling, and label the native control
+as CPU software. Include the supplied animations with conceptual-status banners,
+an authoritative architecture diagram, interface documentation and source hashes.
+
+Raytrace is the primary exact hardware target. At the stated planning assumptions,
+its offload budget is 159.203 ms/frame; a 40% removable fraction would predict a
+10.01% reduction beyond current software. That fraction, bridge cost and target
+frequency are assumptions, not measured hardware success. Exact nbody retains
+CPU pow; the VDOT-only model does not justify a gain. RMAG stays optional and
+approximate. Host checks and RTL elaboration pass; RTL simulation, synthesis
+and physical timing are not claimed.
+
+Evidence: hardware/analysis/estimate.py and estimate.json;
+hardware/docs/HARDWARE_DESIGN.md; hardware/validation/; hardware/diagrams/.
+
+-------------------------------------------------------------------------------
+20. Document the work transparently and keep the reports focused
+-------------------------------------------------------------------------------
+Current user prompt:
+"Also help me build a prompts file that shows how hard we have been working,
+ that we were analyzing and thinking and working on everything."
+
+Additional instructions:
+"in the reports, explain the different optimizations in depth, but also keep
+ out the optimizations that we didn't go through with (but still mention them
+ as things that we considered but didn't work"
+"Make sure that we run using the right tools (correct pyperformance benchmarks,
+ correct perf, flame graph generation tools and so on, that we comply with the
+ requirements )"
+
+Decision/outcome: create this factual prompt/decision record and base the final
+reports on the supplied drafts while updating the selected kernel and measured
+evidence. Explain the retained transformations, briefly identify unselected
+ideas, and distinguish measurement from inference and conditional modeling.
+Reduce generic machine-setup narrative in favor of relevant tools, workload
+identity, correctness, runtime, profile interpretation and hardware integration.
+
+Evidence: report_raytrace.txt; report_nbody.txt; docs/reports/report_raytrace.pdf;
+docs/reports/report_nbody.pdf; docs/validation/; this prompt.txt.
+
+===============================================================================
+CURRENT SUBMISSION STATE AND ATTRIBUTION
+===============================================================================
+
+Selected software:
+  raytrace sphere_shadow — exact scalar sphere + shadow-ray reuse.
+  nbody flat_pow         — exact scalar state + ordered unrolled pair updates.
+
+Target-VM measured median reductions:
+  raytrace 33.27%; nbody 36.89%.
+  Historical raytrace full: 42.78%, retained as a labeled comparison only.
+
+AI-assisted work includes implementation, tests, reviews, analysis, diagrams,
+hardware RTL adaptation and prose. User choices drove scope, correctness,
+benchmark selection, experiment priorities and the final two-change default.
+The user supplied/run the VM experiments and provided results for review.
+No AI attribution is used as a substitute for reproducible evidence.
+
+Neither this record nor the final reports claim that all earlier suggestions
+were correct, that selected software is globally fastest, that mathematical
+expression checks prove every API input, or that modeled hardware improvement
+has been measured. Saved raw data, source identity, exactness gates and explicit
+limitations make those distinctions reviewable.
+===============================================================================

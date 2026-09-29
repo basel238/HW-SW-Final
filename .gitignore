@@ -1,0 +1,12 @@
+# Local environments and generated caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.idea/
+.DS_Store
+__MACOSX/
+*.bak
+# Preserve the submitted evidence, including native perf recordings.
+# New measurement outputs are deliberate files to review before committing.

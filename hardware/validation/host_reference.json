@@ -1,0 +1,7 @@
+{
+  "host_reference": "PASS",
+  "ordered_dot_cases": 20000,
+  "sphere_expression_cases": 20000,
+  "edge_status_cases": 10,
+  "rtl_simulated": false
+}

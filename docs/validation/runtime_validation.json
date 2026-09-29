@@ -1,0 +1,113 @@
+{
+  "python": "3.14.6 (v3.14.6:c63aec69bd5, Jun 10 2026, 08:07:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "tests": {
+    "count": 69,
+    "passed": true,
+    "log": "runtime_tests.log"
+  },
+  "syntax": {
+    "python_ast_files": [
+      "bench/bm_raytrace_upstream.py",
+      "bench/bm_nbody_upstream.py",
+      "variants/bm_nbody_upstream_opt.py",
+      "variants/bm_raytrace_upstream_opt.py",
+      "experiments/nbody_controls.py",
+      "tests/test_submission_integrity.py",
+      "tests/test_run_all_pipeline.py",
+      "tests/test_raytrace_pipeline.py",
+      "tests/test_nbody_grouped.py",
+      "tests/test_nbody_controls.py",
+      "tests/test_nbody_flat.py",
+      "tests/test_nbody_pipeline.py",
+      "tests/test_raytrace_full.py",
+      "tests/test_raytrace_shadow.py",
+      "upstream/bm_raytrace_upstream.py",
+      "upstream/bm_nbody_upstream.py"
+    ],
+    "bash_files": [
+      "lib/common.sh",
+      "lib/pipeline.sh",
+      "setup/05_get_upstream.sh",
+      "setup/02_get_flamegraph.sh",
+      "setup/04_make_venv.sh",
+      "setup/03_tune_vm.sh",
+      "setup/01_install_deps.sh",
+      "tools/gen_report.sh",
+      "tools/doctor.sh",
+      "tools/compare.sh",
+      "tools/ab_timing.sh",
+      "tools/verify_upstream.sh",
+      "run_all.sh",
+      "script_raytrace.sh",
+      "script_nbody.sh"
+    ],
+    "all_pass": true
+  },
+  "correctness": {
+    "raytrace": {
+      "kernel": "sphere_shadow",
+      "loops": 4,
+      "width": 100,
+      "height": 100,
+      "bit_identical": true,
+      "log": "runtime_raytrace_exact.log"
+    },
+    "nbody": {
+      "kernel": "flat_pow",
+      "loops": 16,
+      "iterations": 20000,
+      "energy_and_all_30_state_components_bit_identical": true,
+      "log": "runtime_nbody_exact.log"
+    }
+  },
+  "upstream": {
+    "pyperformance_version": "1.14.0",
+    "verified_against_wheel": true,
+    "wheel_sha256": "94068ac2935b6952ccb5e8a302eb9cebc26e82454494bef6e53822738adf0049"
+  },
+  "production_source_identity": {
+    "bench/bm_raytrace_upstream.py": {
+      "sha256": "9b4c032d8a1b056dadf00c2867e6ab631b7c4ae25ee9b73c6f8ba2185876003e",
+      "matches_original_repository": true
+    },
+    "bench/bm_nbody_upstream.py": {
+      "sha256": "1cf9b11c0ec65015d07bd46dfee167af7e809fc632b251b0ab3c7efecf47b13d",
+      "matches_original_repository": true
+    },
+    "variants/bm_nbody_upstream_opt.py": {
+      "sha256": "5b0dbb3b3f9d7d74331679d208e4a721c04f219f13a0740cf3ab4369f406bbcb",
+      "matches_original_repository": true
+    },
+    "variants/bm_raytrace_upstream_opt.py": {
+      "sha256": "21f404085454bbf3ef8f53ff759f71379dc71fc4233608dc1e1603380ae1498d",
+      "matches_original_repository": true
+    },
+    "upstream/bm_raytrace_upstream.py": {
+      "sha256": "88ef4d9060d8e8f6ce40f376477aaf89cc808fa44813225a3071a05a1467f017",
+      "matches_original_repository": true
+    },
+    "upstream/bm_nbody_upstream.py": {
+      "sha256": "d1385e816d7cfea361b7915e2cf70138cd6b84f40df8bd5152638851f7bcac2b",
+      "matches_original_repository": true
+    }
+  },
+  "flamegraph": {
+    "official_revision": "41fee1f99f9276008b7cd112fca19dc3ea84ac32",
+    "vendored_files": [
+      "stackcollapse-perf.pl",
+      "flamegraph.pl",
+      "difffolded.pl",
+      "docs/cddl1.txt",
+      "README.md"
+    ],
+    "syntax_and_hashes_pass": true,
+    "actual_svg_generation_test_pass": true
+  },
+  "limits": [
+    "No new target-VM performance measurements produced by this packaging validation.",
+    "No Linux perf execution on macOS; integration tests cover argument routing and failure/status handling.",
+    "Source repository and archived result files unmodified.",
+    "No Git commands executed."
+  ]
+}

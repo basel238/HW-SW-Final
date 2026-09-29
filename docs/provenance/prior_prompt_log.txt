@@ -1,0 +1,342 @@
+===============================================================================
+ AI TOOL USAGE — prompts and instructions
+ HW/SW Co-design (00460882) — required deliverable
+===============================================================================
+
+Tool used: Claude (Anthropic), via an internal assistant interface.
+Purpose:   scaffolding the measurement infrastructure, and reviewing the
+           statistical methodology.
+
+This file documents what was asked, what the AI produced, what was WRONG with
+what it produced, and what was corrected. The corrections are the substantive
+part: several were found only by running the code.
+
+-------------------------------------------------------------------------------
+ PROMPT 1 — initial scope
+-------------------------------------------------------------------------------
+"Go thoroughly into the requirements of this project, and give me a solution to
+ the first 3 stages (the run scripts and wrappers). I want commands and scripts
+ to run and get the perf and flamegraph and all the results needed for analysis
+ for these benchmarks. Build me a full repo, ready for deployment and running
+ over a linux vm. Pay attention to all the details in the assignment and be very
+ thorough."
+ [Attached: Project.pdf, plus the course lecture and tutorial decks.]
+
+-------------------------------------------------------------------------------
+ PROMPT 2 — benchmark selection change
+-------------------------------------------------------------------------------
+"I want raytrace and nbody. Give me the scripts package to download and continue
+ everything else you need. Make sure the scripts don't add overhead for the
+ performance counters and analysis and checks."
+
+ -> This prompt drove the most important design decision in the repo. See
+    PHASE SEPARATION below.
+
+-------------------------------------------------------------------------------
+ PROMPT 3 — completion and validation
+-------------------------------------------------------------------------------
+"Do everything, solve the whole assignment. Take your time in validation and
+ verification. Let me know what you want me to run and do and I will."
+
+===============================================================================
+ WHAT THE AI CONTRIBUTED
+===============================================================================
+
+ * Shell infrastructure: config/bench.env, lib/common.sh, lib/pipeline.sh,
+   the four setup/ scripts, tools/{doctor,compare,gen_report}.sh.
+ * Baseline workload harnesses (bench/) with a uniform raw/calibrate/verify CLI.
+ * Optimized variants (variants/) and the rationale comments explaining each
+   transformation in terms of CPython bytecode behaviour.
+ * Documentation: README.md, docs/VM_SETUP.md, docs/PERF_GUIDE.md,
+   docs/HW_PROPOSAL_NOTES.md.
+
+===============================================================================
+ KEY DESIGN DECISION: PHASE SEPARATION (from prompt 2)
+===============================================================================
+
+The request "make sure the scripts don't add overhead" required restructuring,
+not a flag. Profilers perturb what they measure: perf record with DWARF
+unwinding adds ~10-30 % wall time, cProfile adds 2-5x. The resolution was to run
+each measurement in its own process and never quote timing from an instrumented
+run:
+
+  phase 2  clean timing   NO profiler        <- the only quotable numbers
+  phase 3  perf stat      counting mode ~1 % IPC / cache / branches
+  phase 4  perf record    sampling, high ovh flame graphs; timing DISCARDED
+  phase 5  cProfile       tracing, 2-5x      call COUNTS only
+  phase 6  pyperformance  own harness        citable mean +- stdev
+
+Phases 4-5 write their wall time to files named *_DO_NOT_QUOTE_timing.txt so it
+cannot be mistaken for a result. Reported statistic is the MEDIAN of N
+independent processes, with the run-to-run noise printed alongside; compare.sh
+refuses to endorse an improvement smaller than 2x the measured noise.
+
+===============================================================================
+ AI ERRORS FOUND AND CORRECTED
+===============================================================================
+
+These were caught by running the code, not by reading it.
+
+ 1. WRONG PHYSICS TOLERANCE (nbody verify)
+    The AI asserted absolute energy drift < 1e-6 over 1000 steps. That is
+    physically wrong: a symplectic integrator has BOUNDED, OSCILLATORY energy
+    error, not zero. The gate failed immediately (actual drift ~1.7e-4).
+    Fix: relative tolerance < 1e-3, plus a separate 1e-9 relative cross-check
+    against the baseline implementation for the reassociation-only difference.
+
+ 2. NON-BIT-EXACT "SAFE" FP OPTIMIZATION (raytrace)
+    The AI replaced three divisions with one reciprocal + three multiplies and
+    asserted this was bit-exact. It is not: (1/m)*x rounds twice, x/m once,
+    giving ~1 ULP. Because the renderer contains DISCONTINUITIES (shadow
+    hit/miss tests), that 1 ULP flipped an occlusion test at one shadow-edge
+    pixel, changing it by 118/255.
+    Fix: exact division is now the default; FAST_FP=1 opts in and deliberately
+    fails the gate, which is kept as a demonstration.
+    This became a substantive finding for the report: "safe" FP strength
+    reduction is only safe in branch-free numeric code.
+
+ 3. BASH ARRAY EXPANSION UNDER set -u  (would have broken the real VM)
+    "${EMPTY[@]}" raises "unbound variable" under set -u in bash 3.2. The
+    affected arrays (PIN when taskset is absent, ev when no perf events are
+    supported) are empty in exactly the NORMAL no-PMU QEMU case the code was
+    written to handle. The pipeline aborted at phase 0.
+    Fix: guarded all 19 expansions as ${ARR[@]+"${ARR[@]}"}, and rewrote
+    filter_supported_events to build a string rather than an array.
+
+ 4. NESTED HEREDOC MIS-PARSE (gen_report.sh)
+    A heredoc inside $(...) inside another heredoc made bash mis-associate the
+    inner delimiter, silently disabling variable expansion for the rest of the
+    outer heredoc -- ${BENCH} appeared literally in the generated report.
+    Fix: precompute the per-benchmark text into a variable before the heredoc.
+
+ 5. set -e VS grep -c
+    `grep -c '[TODO' | xargs ...` exits non-zero when the count is 0, aborting
+    the script under set -e -- i.e. it failed precisely when the report was
+    complete. Fix: capture with `|| true`.
+
+ 6. FALSE DEPENDENCY CLAIM
+    doctor.sh demanded bash >= 4 "for associative arrays". No associative array
+    is used anywhere. Fix: requirement corrected to 3.2.
+
+ 7. INVALID CPU PINNING
+    PIN_CPU=1 was used unconditionally; on a 1-vCPU guest every taskset call
+    would fail, silently killing all measurements. Fix: build_pin() clamps
+    PIN_CPU to an existing CPU and warns.
+
+===============================================================================
+ VERIFICATION PERFORMED
+===============================================================================
+
+ * bash -n on all 12 shell scripts; py_compile on all Python.
+ * Full pipeline executed end-to-end against a stub `perf` to exercise every
+   branch (including the no-PMU and no-FlameGraph paths) on a machine without
+   real perf.
+ * Correctness gates: raytrace bit-identical to baseline (SHA-256); nbody energy
+   matching to 3.3e-16 relative.
+ * Speedups measured over 5-7 independent processes with noise reported:
+       raytrace ~2.50x  (~60 % improvement), noise 0.79 %
+       nbody    ~1.20x  (~17 % improvement), noise 0.62 %
+ * Negative testing: FAST_FP=1 confirmed to FAIL the raytrace gate, proving the
+   gate is not vacuous.
+
+ NOT verified by the AI (no Linux/PMU available in its environment): real perf
+ counter values, real DWARF stack unwinding, py-spy, and pyperformance
+ integration. These were validated on the VM by me.
+
+===============================================================================
+ WHAT REMAINS MY OWN WORK
+===============================================================================
+
+ * Benchmark selection and the argument for why raytrace + nbody are
+   complementary (allocation/branch-heavy vs dispatch-bound) rather than two
+   instances of the same bottleneck.
+ * Interpretation of the profiles and the bottleneck analysis (report section 2.9).
+ * The entire hardware acceleration proposal: RTL, interfaces, operating
+   frequency, block diagram, and the performance/area/power trade-off
+   discussion. docs/HW_PROPOSAL_NOTES.md contains measured data and a design
+   sketch as a starting point; the design and its justification are mine.
+ * Conclusions, and the presentation.
+
+Per the course policy: AI was used as an aid. I am responsible for
+understanding every part of what is in this repository, and the errors listed
+above are evidence that its output required independent checking rather than
+acceptance.
+===============================================================================
+
+
+===============================================================================
+ CODEX REVIEW AND SHADOW-RAY IMPLEMENTATION — 2026-09-20
+===============================================================================
+
+Tool: OpenAI Codex. This appendix preserves the prior Claude history above.
+Scope: inspection of the latest upstream baseline evidence, one isolated
+raytrace change, correctness validation, and initial course report drafts.
+It is a record of the prompts available in this conversation, not a claim to
+be a complete export of every earlier AI interaction or private reasoning.
+
+Verbatim user prompts for the immediate implementation stage:
+
+"given these observations made by both you and the ther analysis
+what would you suggest we do next?
+Can you help me firts better undertsand from the results how do we conclude the bottlenecks you talked about?
+how did you infer these limits on the benchmarks from seeing this data and flamegraphs?"
+
+"lets start with that, apply the changes to the code under /Users/baselsalameh/Desktop/M.Sc. Technion/Semester 6/HW:SW Co-Design/HW-SW-V2 (under the variants / optimized )
+and in parallel, lets start preparing the documents for the analysis that is required by the project
+see project pdf attached"
+
+"this is the project pdf"
+Attachment: Project/Project.pdf in the parent course directory.
+
+Additional directly relevant user instructions from this conversation:
+
+"i don't care about optimized
+as you said, we still don't have optimized implementation
+lets see the normal runs and try to identify issues"
+
+"study the results
+take only the last results (last timestamp for each type, nbode/raytrace baseline/optimized)
+and lets go over the results and understand if they are matching to what we were expecting"
+
+The later baseline-only instruction governs the baseline analysis in the new
+reports. Subsequent authorization above adds the new software experiment.
+Line breaks/trailing whitespace were normalized in this record.
+
+AI-produced work in this stage:
+* Default shadow_ray kernel: reuse the ray in a light-visibility object loop.
+* Preserve the pre-existing guards experiment as a separate kernel.
+* Correctness tests, same-process reference isolation, and call-count evidence.
+* report_raytrace.txt and report_nbody.txt using the PDF's six-section format.
+* Updated README, assignment requirements map, and experiment instructions.
+
+Claims checked or corrected during this review:
+* Whole-program instructions / function calls is not per-call overhead.
+* Counts of Python/C calls do not directly measure fractions of runtime.
+* Native profiles use debug Python and cannot yield exact release-time limits.
+* The latest raytrace baseline has 1,065 samples, with 26.38% native self
+  samples in _PyEval_EvalFrameDefault; older aggregated percentages should
+  not replace the actual evidence.
+* Exact-class guards narrow subclass/custom-predicate semantics. A successful
+  fixed-scene image hash is not a proof of unrestricted API equivalence.
+* The measured upstream scene has seven spheres, a halfspace, and two lights.
+* Nbody uses a kick-drift update and precomputed body-reference pairs.
+* Saved clean-timing CSVs were malformed; all raw observations were recovered.
+* Negative PMU top-down percentages cannot justify a hardware bottleneck claim.
+
+Validation at this stage is local correctness and operation-count evidence.
+New target-VM optimized performance, a completed hardware design, publication,
+and presentation are not claimed. The student must understand, review, and
+extend the drafts and append future prompts rather than treating AI-produced
+text as independent experimental evidence.
+
+
+===============================================================================
+ CODEX GROUPED NBODY IMPLEMENTATION — 2026-09-20
+===============================================================================
+
+Tool: OpenAI Codex. This appendix records the new nbody experiment and preserves
+prior AI history above. Earlier claims in that history are historical records,
+not a substitute for the evidence and qualifications in the current reports.
+
+Verbatim user prompts (line breaks/trailing whitespace normalized):
+
+"now lets move on to optimizing the nbody benchmark
+you said something about reusing state across consecutive pairs
+how should we be doing that"
+
+"also lets rethink what the bottlenecks are and how do we eliminate them by doing this"
+
+"did you implement this already? if not, lets implement"
+
+"this should be implemented in optimized, don't touch the upstream version. we want to optimize upstream"
+
+AI-produced work in this stage:
+* Add grouped to variants/bm_nbody_upstream_opt.py and make it the default.
+* Retain the first body's position/velocity locals across consecutive partners;
+  preserve pair order, arithmetic order, original power, and final position phase.
+* Build groups from current-state references once per advance inside the timer.
+* Preserve upstream sources and baseline wrapper; keep existing candidate kernels
+  separately selectable. No combined grouped_sqrt variant is introduced.
+* Verify all kernels at the explicitly requested loop and iteration counts;
+  require grouped to match finite energy and all 30 state components bit-for-bit.
+* Apply --no-gc before optimized calibration and ablation as well as raw timing.
+* Add focused regression checks, a local validation record, and an experiment
+  guide; update README and the six-section nbody analysis report.
+
+Evidence and limitations recorded in this stage:
+* The advance hotspot plus native list/float/interpreter work motivates the
+  experiment; debug flame widths do not establish a release-runtime ceiling.
+* Whole-step source-level numeric component reads fall from 150 to 114 and
+  writes from 75 to 57. At 20,000 steps this removes 720,000 reads and 360,000
+  writes. These counts include unpacking and are not machine-instruction counts.
+* A 24% reduction in those component accesses is not a 24% speedup prediction;
+  arithmetic/float-object work remains and group construction has a timed cost.
+* The implemented grouped kernel matched energy and all state-component bits
+  for (loops, steps-per-loop) = (1,1), (1,10), (1,20000), (4,20000), (16,20000)
+  in local checks recorded in docs/nbody_grouped_validation.json.
+* All 24 regression tests pass (13 nbody and 11 raytrace), and explicit 16-loop
+  CLI verification passes every kernel under its stated contract. These checks
+  are not VM timings.
+* The pipeline's default one-loop verification does not inherit --loops 16 from
+  timing; the guide explicitly requests a 16-loop verification first.
+* The latest baseline median remains 227.247625 ms per 20,000 steps. New VM
+  optimized timing, balanced uncertainty analysis, the 7% outcome, and a
+  completed hardware implementation are not claimed.
+
+The student remains responsible for understanding the transformation, reviewing
+its assumptions, running the target-VM comparison, and appending future prompts.
+
+
+=== 20 September 2026: full exact software, reports and hardware design ===
+Actual user instructions (excerpts; earlier sections retain their historical status):
+"prepare the pdf documents that support and explain our findings per benchmark"
+"Implement the rest of the Improvements, for both raytrace and nbody"
+"I also want the script for run_all to run the baseline and the full optimized versions, full workflow"
+"I want to recognize the remaining bottleneck and propose HW optimizations"
+"Keep track of the section in the pdf that says What You Need to Submit"
+"don't perform git operations"
+"agree, 100% correctness, flat_sqrt as nice to have (maybe mention in report)"
+"I don't think we need to perform simulation, just estimate and make claims about what we think it will achieve ... unless it is required"
+"yes english"
+"I also now have the results for the nbody benchmark under the results dir. check it out"
+
+Agreed implementation scope: pure Python final software; exact successful-call
+benchmark outputs/state; optional approximate sqrt; English PDF plus required
+TXT; a complete logical HDL design with labelled analytical estimates; no Git.
+AI assisted with source changes, tests, full workflow, result analysis, report
+authoring, HDL architecture/source and host-format/syntax checks. Independent
+agent source review checked the HDL protocol/datapath; no HDL simulation occurred.
+The latest nbody full run is flat_pow, 37.53% lower median runtime. The raytrace
+shadow-only VM result is 22.63%; new full-kernel Mac timings are not VM claims.
+Final reports correct earlier unsupported claims about fixed call cost, debug
+Amdahl ceilings, disappearing float allocations and static bytecode percentages.
+The student must understand and defend these choices, limitations and evidence.
+
+
+2026-09-20 - Newest complete session review
+Actual user request:
+inspect the results of the newest run, they landed under same directory
+lets infer everything we need from it and understand if further improvements occurred, which improvements to keep
+update the reports if we decide on keeping the additional improvements for raytrace
+and think if this changes anything about the suggested hardware optimization
+
+Resulting decisions: retain exact raytrace full bundle (42.78% target runtime
+reduction), retain unchanged nbody flat_pow (36.89% repeat), preserve historical
+and optional candidates without invented individual VM speedups. Update PDF/TXT
+reports and hardware analytical inputs using measured 6,934/179,457 root mix.
+Hardware remains a candidate with unmeasured release removal/transport costs.
+No Git operations, source-kernel edits, RTL changes or raw-result changes.
+
+
+2026-09-29 - Raytrace default narrowed to two optimizations
+Actual user request:
+"I want to run raytrace with only sphere scalar and ray shadow improvements. I want to make this the default. can you update the code / run scripts"
+
+Implementation: add sphere_shadow, containing scalar sphere intersections and
+shadow-ray reuse only, with existing generic fallbacks. Select it by default in
+the Python CLI, raytrace workflow, run_all and interleaved A/B timing. Preserve
+full and the individual experiments as explicit selections. Add coverage for
+exact primitive/image results, the two-method scope, fallback behavior, script
+routing and the full override. Historical reports/results are not relabelled as
+measurements of this new kernel; a new target-VM measurement is still required.
+No upstream, nbody implementation, hardware, raw-result or Git changes requested.

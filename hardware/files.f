@@ -1,0 +1,15 @@
++incdir+hardware/vendor/HardFloat-1/source
++incdir+hardware/vendor/HardFloat-1/source/8086-SSE
+hardware/vendor/HardFloat-1/source/HardFloat_primitives.v
+hardware/vendor/HardFloat-1/source/HardFloat_rawFN.v
+hardware/vendor/HardFloat-1/source/isSigNaNRecFN.v
+hardware/vendor/HardFloat-1/source/fNToRecFN.v
+hardware/vendor/HardFloat-1/source/recFNToFN.v
+hardware/vendor/HardFloat-1/source/addRecFN.v
+hardware/vendor/HardFloat-1/source/mulRecFN.v
+hardware/vendor/HardFloat-1/source/divSqrtRecFN_small.v
+hardware/vendor/HardFloat-1/source/8086-SSE/HardFloat_specialize.v
+hardware/rtl/geom_accel_pkg.sv
+hardware/rtl/fp64_binary.sv
+hardware/rtl/fp64_alu.sv
+hardware/rtl/geom_accel.sv

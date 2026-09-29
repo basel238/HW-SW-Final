@@ -1,0 +1,84 @@
+{
+  "kind": "analytical sensitivity, not measured hardware speedup",
+  "clock_mhz_target": 50,
+  "iter_core_cycles_assumed": 57,
+  "extra_host_us_per_command_assumed": 0.1,
+  "cycles_including_operand_writes_command_and_retirement": {
+    "VDOT3": 18,
+    "SPHERE_miss": 37,
+    "SPHERE_root": 98,
+    "RMAG": 124
+  },
+  "benchmarks": {
+    "raytrace": {
+      "software_ms": 530.8805,
+      "commands": 179457,
+      "device_ms": 141.25766,
+      "extra_host_ms": 17.945700000000002,
+      "total_offload_ms": 159.20335999999998,
+      "break_even_removed_fraction": 0.2998854921211082,
+      "scenarios": [
+        {
+          "removed_fraction_assumed": 0.2,
+          "estimated_ms": 583.90776,
+          "estimated_time_reduction_pct": -9.98854921211082
+        },
+        {
+          "removed_fraction_assumed": 0.3,
+          "estimated_ms": 530.81971,
+          "estimated_time_reduction_pct": 0.01145078788917786
+        },
+        {
+          "removed_fraction_assumed": 0.4,
+          "estimated_ms": 477.73166,
+          "estimated_time_reduction_pct": 10.011450787889181
+        },
+        {
+          "removed_fraction_assumed": 0.5,
+          "estimated_ms": 424.64360999999997,
+          "estimated_time_reduction_pct": 20.011450787889178
+        },
+        {
+          "removed_fraction_assumed": 0.6,
+          "estimated_ms": 371.55556,
+          "estimated_time_reduction_pct": 30.011450787889178
+        }
+      ]
+    },
+    "nbody_vdot_only": {
+      "software_ms": 143.3736875,
+      "commands": 200000,
+      "device_ms": 72.0,
+      "extra_host_ms": 20.0,
+      "total_offload_ms": 92.0,
+      "break_even_removed_fraction": 0.641679806135976,
+      "scenarios": [
+        {
+          "removed_fraction_assumed": 0.2,
+          "estimated_ms": 206.69895,
+          "estimated_time_reduction_pct": -44.1679806135976
+        },
+        {
+          "removed_fraction_assumed": 0.3,
+          "estimated_ms": 192.36158124999997,
+          "estimated_time_reduction_pct": -34.1679806135976
+        },
+        {
+          "removed_fraction_assumed": 0.4,
+          "estimated_ms": 178.02421249999998,
+          "estimated_time_reduction_pct": -24.167980613597596
+        },
+        {
+          "removed_fraction_assumed": 0.5,
+          "estimated_ms": 163.68684374999998,
+          "estimated_time_reduction_pct": -14.167980613597598
+        },
+        {
+          "removed_fraction_assumed": 0.6,
+          "estimated_ms": 149.34947499999998,
+          "estimated_time_reduction_pct": -4.167980613597599
+        }
+      ]
+    }
+  }
+}
